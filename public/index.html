@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>VERDIX | Smart Waste Management</title>
+<style>
+:root{color-scheme:dark;--bg:#091215;--panel:#122126;--line:#294047;--text:#edf8f4;--muted:#9ab0ad;--green:#69e6ae}
+*{box-sizing:border-box}body{margin:0;font-family:Inter,system-ui,Segoe UI,sans-serif;background:radial-gradient(circle at 80% 0%,#174234,transparent 35%),var(--bg);color:var(--text)}
+.wrap{max-width:1180px;margin:auto;padding:28px 20px 50px}header{display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap;margin-bottom:28px}
+.brand{display:flex;gap:12px;align-items:center}.logo{display:grid;place-items:center;width:48px;height:48px;border-radius:15px;background:var(--green);color:#062016;font-size:25px;font-weight:900}
+h1{font-size:24px;letter-spacing:2px;margin:0}.sub,.small{color:var(--muted);font-size:12px;margin-top:5px}.pill{border:1px solid var(--line);border-radius:99px;padding:9px 13px;color:var(--green);font-size:12px}
+.hero{display:flex;justify-content:space-between;align-items:center;padding:28px;border:1px solid var(--line);background:linear-gradient(120deg,#17332b,#122126 75%);border-radius:22px;margin-bottom:24px}
+.eyebrow{color:var(--green);font-size:11px;font-weight:800;letter-spacing:2px;text-transform:uppercase}h2{font-size:clamp(26px,4vw,40px);line-height:1.1;margin:10px 0}p{color:var(--muted);line-height:1.6}.hero-icon{font-size:64px;padding:10px 22px}
+.grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px;margin:14px 0 22px}.card{background:rgba(18,33,38,.95);border:1px solid var(--line);border-radius:18px;padding:19px;min-width:0}
+.bin-head{display:flex;justify-content:space-between;align-items:center}.emoji{font-size:25px}.bin-title{font-weight:700;margin-top:14px}.value{font-size:28px;font-weight:800;margin-top:12px}.track{height:8px;background:#294047;border-radius:20px;overflow:hidden;margin-top:17px}.fill{height:100%;background:var(--green);border-radius:20px}
+.lower{display:grid;grid-template-columns:1fr 1fr;gap:16px}.section-title{font-size:16px;margin:0 0 13px}.status-row{display:flex;justify-content:space-between;gap:12px;padding:12px 0;border-bottom:1px solid var(--line);font-size:13px}.state{color:var(--green)}
+.history{color:var(--muted);font-size:13px;padding:12px 0;border-bottom:1px solid var(--line)}.actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:16px}
+button{border:1px solid var(--line);border-radius:10px;background:#1c3833;color:var(--text);padding:10px 12px;cursor:pointer}button:hover{border-color:var(--green)}footer{text-align:center;color:var(--muted);font-size:12px;margin-top:24px}
+@media(max-width:760px){.grid{grid-template-columns:repeat(2,minmax(0,1fr))}.lower{grid-template-columns:1fr}.hero-icon{display:none}}@media(max-width:390px){.grid{grid-template-columns:1fr}}
+</style></head><body><main class="wrap">
+<header><div class="brand"><div class="logo">V</div><div><h1>VERDIX</h1><div class="sub">AI-BASED SMART WASTE SORTING</div></div></div><div class="pill">● PROTOTYPE DASHBOARD</div></header>
+<section class="hero"><div><div class="eyebrow">Waste intelligence system</div><h2>Smarter sorting.<br>Cleaner tomorrow.</h2><p>Monitor waste categories, classification activity and bin capacity from one dashboard.</p></div><div class="hero-icon">♻️</div></section>
+<div class="eyebrow">Bin monitoring</div><section class="grid" id="bins"></section>
+<section class="lower"><div class="card"><h3 class="section-title">System status</h3>
+<div class="status-row"><span>Dashboard API</span><span class="state" id="apiState">Checking…</span></div><div class="status-row"><span>AI classification</span><span id="aiState">Demo mode</span></div>
+<div class="status-row"><span>ESP32 controller</span><span id="espState">Not connected</span></div><div class="status-row"><span>Last classification</span><span id="lastClass">None yet</span></div>
+<div class="actions"><button onclick="demo('Plastic')">Test Plastic</button><button onclick="demo('Metal')">Test Metal</button><button onclick="demo('Organic')">Test Organic</button><button onclick="demo('Other')">Test Other</button></div>
+<p class="small">These buttons create demo events only; they do not control physical hardware.</p></div>
+<div class="card"><h3 class="section-title">Recent activity</h3><div id="history"><div class="history">Waiting for first test classification…</div></div></div></section>
+<footer>VERDIX • Prototype interface • AI and hardware integrations are not yet connected</footer></main>
+<script>
+const cats=[{name:"Plastic",emoji:"🧴"},{name:"Metal",emoji:"🥫"},{name:"Organic",emoji:"🍃"},{name:"Other",emoji:"♻️"}];
+function renderBins(data={}){document.getElementById("bins").innerHTML=cats.map((c,i)=>{const b=data[c.name]||{},f=Number.isFinite(b.fill)?Math.max(0,Math.min(100,b.fill)):null;return `<article class="card"><div class="bin-head"><span class="emoji">${c.emoji}</span><span class="small">BIN 0${i+1}</span></div><div class="bin-title">${c.name}</div><div class="value">${f===null?"—":f+"%"}</div><div class="small">${f===null?"Sensor not connected":f>=85?"Almost full":"Capacity used"} · ${b.items||0} test items</div><div class="track"><div class="fill" style="width:${f??0}%"></div></div></article>`}).join("")}
+function esc(s){return String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]))}
+async function refresh(){try{const r=await fetch("/api/status");if(!r.ok)throw Error();const d=await r.json();document.getElementById("apiState").textContent="Online";document.getElementById("aiState").textContent=d.ai;document.getElementById("espState").textContent=d.esp32;document.getElementById("lastClass").textContent=d.lastClassification;renderBins(d.bins);document.getElementById("history").innerHTML=d.history.length?d.history.map(x=>`<div class="history"><strong>${esc(x.category)}</strong> · ${new Date(x.time).toLocaleString()}${x.confidence==null?"":" · "+x.confidence+"%"}</div>`).join(""):'<div class="history">Waiting for first test classification…</div>'}catch(e){document.getElementById("apiState").textContent="Offline"}}
+async function demo(category){try{await fetch("/api/classification",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({category})});await refresh()}catch(e){alert("The backend is not connected.")}}
+renderBins();refresh();setInterval(refresh,5000);
+</script></body></html>
