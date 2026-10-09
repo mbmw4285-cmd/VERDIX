@@ -1,243 +1,303 @@
-<!doctype html>
+
+<!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="theme-color" content="#071510">
-  <title>VERDIX | Smart Waste Intelligence</title>
-  <style>
-    :root{color-scheme:dark;--bg:#07110e;--panel:#0d1c16;--panel2:#10251b;--line:#203b2b;--text:#eff8f1;--muted:#9ab3a1;--green:#70e39a;--green2:#31b86a;--amber:#f4c76b;--red:#ff8585}
-    *{box-sizing:border-box}body{margin:0;background:radial-gradient(ellipse at 10% 0%,#123221 0,transparent 38%),var(--bg);color:var(--text);font:15px/1.5 Inter,ui-sans-serif,system-ui,-apple-system,Segoe UI,sans-serif}
-    button{font:inherit;cursor:pointer;border:0;border-radius:12px;padding:11px 15px;font-weight:700;transition:.15s}button:disabled{opacity:.45;cursor:not-allowed}.primary{background:var(--green);color:#092014}.secondary{background:#193527;color:var(--text);border:1px solid #315540}.danger{background:#391d1d;color:#ffdada;border:1px solid #653131}button:hover:not(:disabled){filter:brightness(1.08);transform:translateY(-1px)}
-    .wrap{max-width:1180px;margin:auto;padding:28px 20px 50px}.top{display:flex;justify-content:space-between;align-items:center;gap:20px;margin-bottom:26px}.brand{display:flex;align-items:center;gap:13px}.logo{width:48px;height:48px;border-radius:15px;background:linear-gradient(145deg,#8af4ad,#2b9c5b);display:grid;place-items:center;color:#092014;font-size:25px;font-weight:900}.eyebrow{font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:var(--green);font-weight:800}.brand h1{margin:0;font-size:24px;letter-spacing:.03em}.brand p{margin:2px 0 0;color:var(--muted);font-size:13px}.pill{border:1px solid var(--line);background:#0c1c14;border-radius:99px;padding:8px 12px;color:var(--muted);font-size:12px;white-space:nowrap}.dot{display:inline-block;width:7px;height:7px;background:var(--green);border-radius:50%;margin-right:7px;box-shadow:0 0 10px #70e39a88}
-    .hero{display:flex;justify-content:space-between;gap:20px;align-items:flex-end;margin-bottom:22px}.hero h2{font-size:clamp(27px,4vw,42px);line-height:1.08;margin:9px 0}.hero p{color:var(--muted);margin:0;max-width:620px}.tag{color:var(--green);font-size:12px;font-weight:800;letter-spacing:.12em;text-transform:uppercase}
-    .grid{display:grid;grid-template-columns:minmax(0,1.35fr) minmax(300px,.85fr);gap:18px}.panel{border:1px solid var(--line);border-radius:19px;background:linear-gradient(180deg,#0e2017ee,#0a1711ee);padding:20px;min-width:0;box-shadow:0 15px 45px #0002}.panel-head{display:flex;justify-content:space-between;align-items:flex-start;gap:14px;margin-bottom:15px}.panel h3{font-size:17px;margin:0}.sub{font-size:12px;color:var(--muted);margin-top:4px}.camera-frame{position:relative;overflow:hidden;border-radius:15px;background:#030806;border:1px solid #284634;aspect-ratio:4/3;display:grid;place-items:center}.camera-frame video,.camera-frame img{width:100%;height:100%;object-fit:contain;display:none}.camera-frame video.show,.camera-frame img.show{display:block}.camera-empty{text-align:center;color:var(--muted);padding:20px}.camera-empty .cam-icon{font-size:38px;margin-bottom:8px}.camera-controls{display:flex;gap:9px;flex-wrap:wrap;margin-top:14px}.camera-select-row{display:flex;gap:9px;align-items:center;margin-top:13px;flex-wrap:wrap}.camera-select-row label{font-size:12px;color:var(--muted);font-weight:700}.camera-select-row select{flex:1;min-width:180px;background:#09150f;color:var(--text);border:1px solid #315540;border-radius:10px;padding:11px;font:inherit}.camera-select-row button{padding:10px 12px}.hint{font-size:12px;color:var(--muted);margin:11px 0 0}.statusline{display:flex;gap:8px;align-items:center;font-size:12px;color:var(--muted);margin-top:12px}.statusdot{width:8px;height:8px;background:#52685a;border-radius:50%}.statusdot.good{background:var(--green)}.statusdot.bad{background:var(--red)}
-    .result{margin-top:17px;border:1px solid var(--line);background:#09150f;border-radius:15px;padding:16px;display:none}.result.show{display:block}.result-top{display:flex;justify-content:space-between;gap:12px;align-items:center}.category{font-size:23px;font-weight:850}.confidence{color:var(--green);font-weight:800}.result p{color:var(--muted);margin:7px 0 0}.result .reason{font-size:13px}.stats{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.stat{background:#102319;border:1px solid #203e2d;border-radius:14px;padding:14px}.stat span{display:block;color:var(--muted);font-size:12px}.stat strong{display:block;font-size:24px;margin-top:4px}.bins{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-top:16px}.bin{border:1px solid var(--line);border-radius:14px;padding:13px;background:#0a1811}.bin-top{display:flex;justify-content:space-between;gap:8px;font-weight:750}.bin small{display:block;color:var(--muted);margin-top:5px}.bar{height:5px;border-radius:99px;background:#20382a;overflow:hidden;margin-top:10px}.bar i{display:block;height:100%;background:var(--green);width:0}.history{margin-top:18px}.history-list{display:grid;gap:8px}.history-item{display:flex;justify-content:space-between;gap:10px;align-items:center;border-bottom:1px solid #1c3426;padding:10px 0}.history-item:last-child{border:0}.history-item strong{display:block;font-size:13px}.history-item small{color:var(--muted);font-size:11px}.history-right{text-align:right;white-space:nowrap;color:var(--green);font-size:12px;font-weight:800}.empty{color:var(--muted);font-size:13px;padding:12px 0}.footer{color:#76907d;font-size:12px;text-align:center;margin-top:24px}.notice{border:1px solid #554323;background:#241d0e;color:#ead8a6;border-radius:12px;padding:12px;font-size:12px;margin-top:13px}
-    @media(max-width:800px){.grid{grid-template-columns:1fr}.hero{display:block}.hero .pill{display:inline-block;margin-top:14px}.top{align-items:flex-start}.brand h1{font-size:20px}.wrap{padding:20px 13px 35px}.panel{padding:15px}}@media(max-width:430px){.pill{white-space:normal}.camera-controls button{flex:1}.bins{grid-template-columns:1fr 1fr}.stats{grid-template-columns:1fr 1fr}}
-
-    /* Screenshot-inspired two-column camera + AI workstation */
-    body{background:#030b07}
-    .wrap{max-width:1480px;padding:30px 22px 48px}
-    .top,.hero{display:none}
-    .grid{grid-template-columns:minmax(0,1.08fr) minmax(360px,.92fr);gap:24px;align-items:stretch}
-    .panel{border-radius:28px;padding:30px;background:#071710;border-color:#17452d;box-shadow:none;min-height:100%}
-    .panel h3{font-size:17px;letter-spacing:.13em;color:#31f5a0}
-    .panel-head{margin-bottom:20px}
-    .camera-frame{aspect-ratio:4/3;border-radius:20px;border-color:#183b29}
-    .camera-frame video,.camera-frame img{object-fit:cover}
-    .camera-select-row{margin-top:16px}
-    .camera-select-row select{border-radius:15px;padding:15px 17px;background:#06150e;border-color:#173e2a}
-    .camera-select-row label{display:none}
-    .camera-controls{margin-top:16px;display:grid;grid-template-columns:1fr 1fr;gap:12px}
-    .camera-controls button{border-radius:15px;min-height:48px}
-    #stopBtn{grid-column:1/-1}
-    .panel-head .sub{max-width:600px}
-    .result{display:block;margin-top:0;border:0;background:transparent;padding:12px 0 0}
-    .result .sub{display:none}
-    .result-top{display:block}
-    .category{font-size:36px;line-height:1.2;margin:28px 0 34px}
-    .confidence{display:block;text-align:right;margin-top:-5px}
-    .result p{display:flex;justify-content:space-between;gap:12px;font-size:16px;color:#8ba695;margin:16px 0}
-    .result p#resultItem{color:#e6f2e9;font-weight:750}
-    .result .reason{display:block;min-height:46px}
-    .ai-progress{height:9px;background:#1a2a21;border-radius:99px;overflow:hidden;margin:16px 0}
-    .ai-progress i{display:block;height:100%;width:0;background:#25e88e;transition:width .2s}
-    .sort-btn{width:100%;margin-top:22px;min-height:54px;border-radius:15px;background:#12683e;color:#03170c;font-size:16px}
-    .ai-label{color:#31f5a0;font-size:17px;letter-spacing:.13em;font-weight:850}
-    .ai-note{color:#809989;margin-top:14px;min-height:24px}
-    .camera-empty{font-size:14px}
-    .notice{margin-top:14px}
-    .statusline{margin-top:14px}
-    aside{display:flex;flex-direction:column;gap:18px}
-    aside .panel{min-height:unset}
-    .history{margin-top:0}
-    @media(max-width:800px){.grid{grid-template-columns:1fr}.wrap{padding:14px}.panel{padding:18px;border-radius:20px}.category{font-size:30px}.camera-controls{grid-template-columns:1fr}.camera-controls #stopBtn{grid-column:auto}}
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>VERDIX | AI Waste Sorting</title>
+<style>
+:root {
+  --bg: #06110e;
+  --panel: #091a14;
+  --border: #174532;
+  --green: #20f59a;
+  --muted: #87a596;
+  --text: #e6f5ee;
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  background: radial-gradient(ellipse at top right,#0b3023,transparent 45%),var(--bg);
+  color: var(--text);
+  font-family: Inter, Arial, sans-serif;
+}
+header {
+  max-width: 1450px;
+  margin: auto;
+  padding: 25px 28px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 15px;
+}
+.brand { display: flex; align-items: center; gap: 12px; }
+.logo {
+  width: 48px; height: 48px; border-radius: 15px;
+  display: grid; place-items: center;
+  color: #052017; background: #5ce9b2;
+  font-size: 25px; font-weight: 900;
+}
+.brand h2 { margin: 0; letter-spacing: 2px; font-size: 22px; }
+.brand small { color: var(--muted); font-size: 11px; }
+.pill {
+  border: 1px solid var(--border); border-radius: 30px;
+  padding: 10px 14px; color: #5ce9b2; font-size: 12px;
+}
+main { max-width: 1450px; margin: auto; padding: 0 28px 40px; }
+.hero {
+  background: linear-gradient(110deg,#14372a,#102126);
+  border: 1px solid #1c3b32; border-radius: 24px;
+  padding: 32px; margin-bottom: 28px;
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 20px;
+}
+.eyebrow {
+  color: #5ce9b2; font-weight: 800; letter-spacing: 2px;
+  font-size: 11px;
+}
+.hero h1 { font-size: clamp(28px,4vw,43px); line-height: 1.08; margin: 14px 0; }
+.hero p { color: #98b8aa; line-height: 1.7; margin-bottom: 0; }
+.recycle { font-size: 55px; padding: 10px 25px; }
+.workspace {
+  display: grid; grid-template-columns: 1.2fr 1fr; gap: 24px;
+}
+.panel {
+  min-width: 0; background: rgba(8,24,17,.94);
+  border: 1px solid var(--border); border-radius: 28px;
+  padding: 28px;
+}
+.panel h3 { margin: 0 0 20px; font-size: 17px; letter-spacing: 2px; }
+.video-wrap {
+  width: 100%; aspect-ratio: 4/3; background: #020806;
+  border-radius: 20px; overflow: hidden; position: relative;
+  border: 1px solid #173b2b;
+}
+video {
+  width: 100%; height: 100%; display: block;
+  object-fit: cover; transform: scaleX(1);
+}
+.camera-frame {
+  position: absolute; width: 50%; height: 48%;
+  border: 2px solid #20f59a; border-radius: 17px;
+  left: 25%; top: 26%; pointer-events: none;
+}
+select, button {
+  font: inherit; border-radius: 14px; padding: 14px 16px;
+}
+select {
+  width: 100%; margin-top: 16px; color: var(--text);
+  background: #071810; border: 1px solid var(--border);
+}
+.actions { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 16px; }
+button { cursor: pointer; border: 1px solid #1e9864; font-weight: 750; }
+.primary { background: var(--green); color: #042117; }
+.secondary { background: #122e22; color: var(--text); }
+button:disabled { opacity: .45; cursor: not-allowed; }
+.message { font-size: 13px; color: var(--muted); line-height: 1.6; }
+.result-category { font-size: 42px; font-weight: 850; margin: 54px 0 42px; }
+.metric { display: flex; justify-content: space-between; gap: 12px; margin: 22px 0; }
+.muted { color: var(--muted); }
+.progress { height: 10px; border-radius: 20px; background: #192a22; overflow: hidden; }
+.progress div { height: 100%; width: 0; background: var(--green); transition: width .3s; }
+.analysis { color: var(--muted); line-height: 1.7; min-height: 48px; margin-top: 18px; }
+.sort { width: 100%; margin-top: 30px; background: #176b43; color: #03190e; border: 0; }
+.status { color: var(--muted); font-size: 12px; margin-top: 15px; }
+footer { text-align: center; color: var(--muted); font-size: 12px; padding: 28px 0 10px; }
+@media(max-width:850px) {
+  header,main { padding-left: 16px; padding-right: 16px; }
+  .workspace { grid-template-columns: 1fr; }
+  .hero { padding: 25px; }
+  .recycle { font-size: 38px; padding: 0; }
+  .panel { padding: 20px; }
+}
+@media(max-width:480px) {
+  .pill { display: none; }
+  .hero { padding: 20px; }
+  .recycle { display: none; }
+  .actions { grid-template-columns: 1fr; }
+}
+</style>
 </head>
 <body>
-  <main class="wrap">
-    <header class="top">
-      <div class="brand"><div class="logo">V</div><div><div class="eyebrow">AI waste intelligence</div><h1>VERDIX</h1><p>Smart sorting & management system</p></div></div>
-      <div class="pill"><span class="dot"></span><span id="serverBadge">Connecting to server…</span></div>
-    </header>
-    <section class="hero"><div><div class="tag">01 / Live image classification</div><h2>See waste. <span style="color:var(--green)">Sort smarter.</span></h2><p>Start your laptop webcam, place one waste item in view, and capture a snapshot. Gemini will classify the image into Plastic, Metal, Organic, or Other.</p></div><div class="pill">Prototype · AI result is an estimate</div></section>
-    <div class="grid">
-      <section class="panel">
-        <div class="panel-head"><div><h3>Camera station</h3><div class="sub">Camera stays in your browser; a snapshot is sent for AI analysis only when you press classify.</div></div><div class="pill" id="cameraBadge">Camera off</div></div>
-        <div class="camera-select-row"><label for="cameraSelect">Camera source</label><select id="cameraSelect" aria-label="Choose webcam"><option value="">Default camera</option></select><button class="secondary" id="refreshCamerasBtn" type="button">Find cameras</button></div>
-        <div class="camera-frame">
-          <video id="video" autoplay playsinline muted></video><img id="snapshot" alt="Captured waste item preview">
-          <div class="camera-empty" id="cameraEmpty"><div class="cam-icon">▣</div><strong>Camera preview</strong><div class="sub">Start the camera to begin</div></div>
-        </div>
-        <div class="camera-controls"><button class="primary" id="startBtn">Start webcam</button><button class="secondary" id="captureBtn" disabled>Capture & classify</button><button class="danger" id="stopBtn" disabled>Stop camera</button></div>
-        <div class="notice">Use a clear, well-lit view of one item against a simple background. Gemini can make mistakes; verify the category before using it to control physical sorting hardware.</div>
-        
-      </section>
-      <aside>
-        <section class="panel ai-panel">
-          <div class="ai-label">AI Classification</div>
-          <div class="result" id="resultCard" aria-live="polite">
-            <div class="result-top"><div class="category" id="resultCategory">—</div><div class="confidence" id="resultConfidence">0% confidence</div></div>
-            <p><span>Detected item</span><strong id="resultItem">Waiting for scan</strong></p>
-            <div class="ai-progress"><i id="confidenceBar"></i></div>
-            <p class="reason" id="resultReason">Scan an object to see the AI's analysis.</p>
-          </div>
-          <button class="sort-btn" id="sortBtn" type="button">Sort to Bin</button>
-          <div class="ai-note" id="sortMessage" role="status">Classification results will appear here.</div>
-          <div class="statusline"><span class="statusdot" id="statusDot"></span><span id="message" role="status">Allow camera permission when your browser asks.</span></div>
-        </section>
-        <section class="panel"><div class="panel-head"><div><h3>System overview</h3><div class="sub">Live data from this app instance</div></div><button class="secondary" id="refreshBtn" style="padding:8px 10px;font-size:12px">Refresh</button></div>
-          <div class="stats"><div class="stat"><span>Items classified</span><strong id="totalItems">0</strong></div><div class="stat"><span>Last category</span><strong id="lastCategory" style="font-size:19px">—</strong></div><div class="stat"><span>AI connection</span><strong id="aiState" style="font-size:15px">Checking…</strong></div><div class="stat"><span>Hardware</span><strong id="hardwareState" style="font-size:15px">Not connected</strong></div></div>
-          <div class="bins" id="bins"><div class="bin"><div class="bin-top">Plastic <span>—</span></div><small>Fill level not connected</small><div class="bar"><i></i></div></div><div class="bin"><div class="bin-top">Metal <span>—</span></div><small>Fill level not connected</small><div class="bar"><i></i></div></div><div class="bin"><div class="bin-top">Organic <span>—</span></div><small>Fill level not connected</small><div class="bar"><i></i></div></div><div class="bin"><div class="bin-top">Other <span>—</span></div><small>Fill level not connected</small><div class="bar"><i></i></div></div></div>
-        </section>
-        <section class="panel history"><div class="panel-head"><div><h3>Recent classifications</h3><div class="sub">Most recent first</div></div></div><div class="history-list" id="historyList"><div class="empty">No classifications yet. Start the webcam and capture an item.</div></div></section>
-      </aside>
+<header>
+  <div class="brand">
+    <div class="logo">V</div>
+    <div><h2>VERDIX</h2><small>AI-BASED SMART WASTE SORTING</small></div>
+  </div>
+  <div class="pill">● PROTOTYPE DASHBOARD</div>
+</header>
+
+<main>
+  <section class="hero">
+    <div>
+      <div class="eyebrow">WASTE INTELLIGENCE SYSTEM</div>
+      <h1>Smarter sorting.<br>Cleaner tomorrow.</h1>
+      <p>Monitor waste categories, classification activity and bin capacity from one dashboard.</p>
     </div>
-    <div class="footer">VERDIX · Webcam image classification powered by Gemini API · Images are not stored by this starter app.</div>
-  </main>
-  <canvas id="canvas" hidden></canvas>
+    <div class="recycle">♻️</div>
+  </section>
+
+  <section class="workspace">
+    <div class="panel">
+      <h3>Live Camera</h3>
+      <div class="video-wrap">
+        <video id="video" autoplay playsinline muted></video>
+        <div class="camera-frame"></div>
+      </div>
+      <select id="cameraSelect" aria-label="Choose webcam">
+        <option value="">Find cameras...</option>
+      </select>
+      <div class="actions">
+        <button class="secondary" id="startBtn">Start webcam</button>
+        <button class="primary" id="captureBtn" disabled>Capture &amp; classify</button>
+      </div>
+      <button class="secondary" id="stopBtn" style="width:100%;margin-top:10px">Stop camera</button>
+      <p id="cameraMessage" class="message">Connect your USB webcam, then select it from the list.</p>
+    </div>
+
+    <div class="panel">
+      <h3>AI Classification</h3>
+      <div class="result-category" id="category">—</div>
+      <div class="metric"><span class="muted">Detected item</span><b id="item">Waiting for scan</b></div>
+      <div class="metric"><span class="muted">Confidence</span><b id="confidence">0%</b></div>
+      <div class="progress"><div id="confidenceBar"></div></div>
+      <div class="analysis" id="analysis">Scan an object to see the AI's analysis.</div>
+      <button id="sortBtn" class="sort" disabled>Sort to Bin</button>
+      <p id="aiMessage" class="status">AI status: waiting for scan</p>
+    </div>
+  </section>
+  <footer>VERDIX • AI Waste Sorting Prototype • Verify classifications before physical sorting</footer>
+</main>
+
 <script>
-(() => {
-  const $ = (id) => document.getElementById(id);
-  const video = $('video'), snapshot = $('snapshot'), canvas = $('canvas');
-  let stream = null, busy = false, cameraDevices = [];
+const video = document.getElementById("video");
+const cameraSelect = document.getElementById("cameraSelect");
+const startBtn = document.getElementById("startBtn");
+const captureBtn = document.getElementById("captureBtn");
+const stopBtn = document.getElementById("stopBtn");
+const cameraMessage = document.getElementById("cameraMessage");
+const aiMessage = document.getElementById("aiMessage");
+let stream = null;
+let lastCategory = null;
+let busy = false;
 
-  async function refreshCameras() {
-    const select = $('cameraSelect');
-    const previous = select.value;
-    if (!navigator.mediaDevices || !navigator.mediaDevices.enumerateDevices) {
-      setMessage('Camera selection is not supported in this browser. Try the latest Chrome or Edge.', 'bad'); return;
+async function findCameras() {
+  try {
+    // Browsers may hide camera labels until permission is granted.
+    const devices = await navigator.mediaDevices.enumerateDevices();
+    const cameras = devices.filter(d => d.kind === "videoinput");
+    const previous = cameraSelect.value;
+    cameraSelect.innerHTML = "";
+    if (!cameras.length) {
+      cameraSelect.add(new Option("No camera found", ""));
+      return;
     }
-    try {
-      const devices = await navigator.mediaDevices.enumerateDevices();
-      cameraDevices = devices.filter(device => device.kind === 'videoinput');
-      select.innerHTML = '';
-      if (!cameraDevices.length) {
-        select.add(new Option('No cameras detected', ''));
-        setMessage('No cameras detected. Connect your USB webcam, then click Find cameras.', 'bad'); return;
-      }
-      cameraDevices.forEach((device, index) => {
-        const label = device.label || `Camera ${index + 1}`;
-        select.add(new Option(label, device.deviceId));
-      });
-      if (cameraDevices.some(device => device.deviceId === previous)) select.value = previous;
-      else select.selectedIndex = 0;
-      setMessage(`${cameraDevices.length} camera(s) available. Select one, then click Start webcam.`, 'good');
-    } catch (error) {
-      setMessage('Could not list cameras. Check browser permissions and click Find cameras again.', 'bad');
-    }
+    cameras.forEach((camera, i) => {
+      cameraSelect.add(new Option(camera.label || `Camera ${i + 1}`, camera.deviceId));
+    });
+    if (cameras.some(c => c.deviceId === previous)) cameraSelect.value = previous;
+  } catch (e) {
+    cameraMessage.textContent = "Unable to list cameras. Check browser permissions.";
   }
+}
 
-  function setMessage(text, kind='') {
-    $('message').textContent = text;
-    $('statusDot').className = 'statusdot' + (kind ? ' ' + kind : '');
+async function startCamera() {
+  if (!navigator.mediaDevices?.getUserMedia) {
+    cameraMessage.textContent = "Camera access requires HTTPS and a supported browser.";
+    return;
   }
-  function stopTracks() {
-    if (stream) stream.getTracks().forEach(track => track.stop());
-    stream = null; video.srcObject = null;
-    video.classList.remove('show');
-    $('stopBtn').disabled = true; $('captureBtn').disabled = true;
-    $('cameraBadge').textContent = 'Camera off';
+  stopCamera();
+  try {
+    const selectedId = cameraSelect.value;
+    const videoConstraints = selectedId
+      ? { deviceId: { exact: selectedId }, width: { ideal: 1280 }, height: { ideal: 720 } }
+      : { facingMode: "user", width: { ideal: 1280 }, height: { ideal: 720 } };
+    stream = await navigator.mediaDevices.getUserMedia({ video: videoConstraints, audio: false });
+    video.srcObject = stream;
+    await video.play();
+    captureBtn.disabled = false;
+    cameraMessage.textContent = "Camera connected. Place one waste item in view.";
+    await findCameras();
+    if (selectedId) cameraSelect.value = selectedId;
+  } catch (e) {
+    cameraMessage.textContent = "Could not open camera: " + e.message +
+      ". Allow camera permission and close other apps using it.";
   }
-  async function startCamera() {
-    if (stream) stopTracks();
-    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-      setMessage('Camera access is not available in this browser. Open the HTTPS Render URL in Chrome or Edge.', 'bad'); return;
-    }
-    try {
-      const selectedDeviceId = $('cameraSelect').value;
-      const videoConstraints = selectedDeviceId
-        ? {deviceId:{exact:selectedDeviceId},width:{ideal:1280},height:{ideal:960}}
-        : {width:{ideal:1280},height:{ideal:960}};
-      stream = await navigator.mediaDevices.getUserMedia({video:videoConstraints,audio:false});
-      video.srcObject = stream;
-      await video.play();
-      await refreshCameras(); video.classList.add('show'); snapshot.classList.remove('show'); $('cameraEmpty').style.display='none';
-      $('stopBtn').disabled = false; $('captureBtn').disabled = false; $('cameraBadge').textContent='Camera ready';
-      setMessage('Camera is ready. Place one item in view and click Capture & classify.', 'good');
-    } catch (error) {
-      let msg = 'Could not start the camera.';
-      if (error.name === 'NotAllowedError') msg = 'Camera permission was denied. Allow camera access in your browser address-bar settings.';
-      else if (error.name === 'NotFoundError') msg = 'No camera was found. Connect a webcam and try again.';
-      else if (error.name === 'NotReadableError') msg = 'The camera may be in use by another app. Close other camera apps and retry.';
-      setMessage(msg, 'bad');
-    }
+}
+
+function stopCamera() {
+  if (stream) stream.getTracks().forEach(track => track.stop());
+  stream = null;
+  video.srcObject = null;
+  captureBtn.disabled = true;
+  cameraMessage.textContent = "Camera stopped.";
+}
+
+cameraSelect.addEventListener("change", () => {
+  if (stream) startCamera();
+});
+startBtn.addEventListener("click", startCamera);
+stopBtn.addEventListener("click", stopCamera);
+
+captureBtn.addEventListener("click", async () => {
+  if (!stream || busy || !video.videoWidth) return;
+  busy = true;
+  captureBtn.disabled = true;
+  aiMessage.textContent = "Sending image to Gemini AI...";
+  try {
+    const canvas = document.createElement("canvas");
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+    canvas.getContext("2d").drawImage(video, 0, 0);
+    const dataUrl = canvas.toDataURL("image/jpeg", 0.85);
+    const imageBase64 = dataUrl.split(",")[1];
+
+    const response = await fetch("/api/classify-image", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ imageBase64, mimeType: "image/jpeg" })
+    });
+    const data = await response.json();
+    if (!response.ok) throw new Error(data.error || "Classification failed.");
+
+    const result = data.item || data.result || data;
+    const allowed = ["Plastic", "Metal", "Organic", "Other"];
+    const cat = allowed.find(c => c.toLowerCase() === String(result.category || "").toLowerCase());
+    if (!cat) throw new Error("AI returned an unknown category. Please scan again.");
+
+    lastCategory = cat;
+    document.getElementById("category").textContent = cat;
+    document.getElementById("item").textContent = result.item || result.itemName || cat;
+    const score = Math.max(0, Math.min(100, Number(result.confidence) || 0));
+    document.getElementById("confidence").textContent = score + "%";
+    document.getElementById("confidenceBar").style.width = score + "%";
+    document.getElementById("analysis").textContent =
+      result.reason || result.explanation || "Classified by Gemini AI. Check the item before sorting.";
+    document.getElementById("sortBtn").disabled = false;
+    aiMessage.textContent = "Classification complete.";
+  } catch (e) {
+    aiMessage.textContent = "AI error: " + e.message;
+  } finally {
+    busy = false;
+    captureBtn.disabled = !stream;
   }
-  async function classifySnapshot() {
-    if (!stream || busy) return;
-    if (!video.videoWidth || !video.videoHeight) { setMessage('Camera is still starting. Wait a moment and retry.', 'bad'); return; }
-    busy = true; $('captureBtn').disabled = true; $('startBtn').disabled = true;
-    try {
-      const maxWidth = 960, scale = Math.min(1, maxWidth / video.videoWidth);
-      canvas.width = Math.round(video.videoWidth * scale); canvas.height = Math.round(video.videoHeight * scale);
-      canvas.getContext('2d').drawImage(video, 0, 0, canvas.width, canvas.height);
-      const dataUrl = canvas.toDataURL('image/jpeg', 0.78);
-      snapshot.src = dataUrl; snapshot.classList.add('show');
-      setMessage('Sending the captured image to Gemini…', ''); $('cameraBadge').textContent='Classifying…';
-      const response = await fetch('/api/classify-image', {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({imageBase64:dataUrl.split(',')[1],mimeType:'image/jpeg'})});
-      const data = await response.json().catch(()=>({error:'The server returned an unreadable response.'}));
-      if (!response.ok) throw new Error(data.error || 'Classification failed.');
-      $('resultCard').classList.add('show');
-      $('resultCategory').textContent = data.item.category;
-      $('resultConfidence').textContent = `${data.item.confidence}%`; $('confidenceBar').style.width = `${Math.max(0,Math.min(100,Number(data.item.confidence)||0))}%`;
-      $('resultItem').textContent = data.item.itemName || 'Waste item';
-      $('resultReason').textContent = data.item.reason || '';
-      $('cameraBadge').textContent='Classification complete';
-      setMessage('Classification complete. Verify the result before physical sorting.', 'good');
-      renderStatus({bins:data.bins,history:data.history,lastClassification:data.item.category});
-    } catch (error) {
-      setMessage(error.message || 'Classification failed. Please try again.', 'bad');
-      $('cameraBadge').textContent='Needs attention';
-    } finally {
-      busy = false; $('captureBtn').disabled = !stream; $('startBtn').disabled = false;
-    }
+});
+
+document.getElementById("sortBtn").addEventListener("click", () => {
+  if (!lastCategory) return;
+  // This is a UI suggestion only; no physical servo command is sent.
+  document.getElementById("analysis").textContent =
+    "Suggested destination: " + lastCategory + " bin. Physical sorting is not connected yet.";
+  aiMessage.textContent = "Suggested bin: " + lastCategory + ". No hardware command was sent.";
+});
+
+(async function init() {
+  if (!navigator.mediaDevices?.enumerateDevices) {
+    cameraMessage.textContent = "Open this site over HTTPS in Chrome or Edge to use your webcam.";
+    return;
   }
-  function renderStatus(data) {
-    if (!data) return;
-    const history = data.history || [];
-    $('totalItems').textContent = history.length ? (data.bins ? Object.values(data.bins).reduce((sum,b)=>sum+(Number(b.items)||0),0) : history.length) : '0';
-    $('lastCategory').textContent = data.lastClassification || (history[0] && history[0].category) || '—';
-    if (data.ai) $('aiState').textContent = data.ai.includes('missing') ? 'Key missing' : 'Configured';
-    if (data.esp32) $('hardwareState').textContent = data.esp32;
-    if (data.bins) {
-      $('bins').innerHTML = Object.entries(data.bins).map(([name,bin]) => {
-        const fill = Number.isFinite(Number(bin.fill)) ? Math.max(0,Math.min(100,Number(bin.fill))) : null;
-        return `<div class="bin"><div class="bin-top">${name}<span>${fill === null ? '—' : fill+'%'}</span></div><small>${bin.items || 0} classified item(s) · ${fill === null ? 'Fill sensor not connected' : 'reported fill level'}</small><div class="bar"><i style="width:${fill === null ? 0 : fill}%"></i></div></div>`;
-      }).join('');
-    }
-    $('historyList').innerHTML = history.length ? history.slice(0,8).map(item => {
-      const time = item.time ? new Date(item.time).toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'}) : '';
-      return `<div class="history-item"><div><strong>${escapeHtml(item.itemName || item.category || 'Waste item')}</strong><small>${escapeHtml(item.category || '')} · ${time}</small></div><div class="history-right">${item.confidence == null ? '—' : Math.round(item.confidence)+'%'}</div></div>`;
-    }).join('') : '<div class="empty">No classifications yet. Start the webcam and capture an item.</div>';
-  }
-  function escapeHtml(value) { return String(value).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
-  async function refreshStatus() {
-    try {
-      const res = await fetch('/api/status'); const data = await res.json();
-      $('serverBadge').textContent = 'Server online'; $('aiState').textContent = (data.ai || '').includes('missing') ? 'Key missing' : 'Configured';
-      renderStatus(data);
-    } catch (_) { $('serverBadge').textContent = 'Server unreachable'; setMessage('Cannot reach the VERDIX server. Refresh the page in a moment.', 'bad'); }
-  }
-  $('startBtn').addEventListener('click', startCamera);
-  $('refreshCamerasBtn').addEventListener('click', refreshCameras);
-  $('cameraSelect').addEventListener('change', () => {
-    if (stream) {
-      startCamera();
-    } else {
-      setMessage('Camera selected. Click Start webcam to preview it on this page.');
-    }
-  });
-  $('captureBtn').addEventListener('click', classifySnapshot);
-  $('sortBtn').addEventListener('click', () => {
-    const category = $('resultCategory').textContent.trim();
-    if (!category || category === '—' || $('resultItem').textContent === 'Waiting for scan') { $('sortMessage').textContent = 'Scan an item first; no bin has been selected.'; return; }
-    $('sortMessage').textContent = `Suggested destination: ${category} bin. Hardware is not connected, so no physical sorting command was sent.`;
-  });
-  $('stopBtn').addEventListener('click', () => { stopTracks(); $('cameraEmpty').style.display='block'; setMessage('Camera stopped. Start it again when ready.'); });
-  $('refreshBtn').addEventListener('click', refreshStatus);
-  window.addEventListener('pagehide', stopTracks);
-  refreshStatus();
-  refreshCameras();
+  await findCameras();
+  cameraMessage.textContent = "Select your USB webcam and click Start webcam. Camera permission may be needed.";
 })();
 </script>
 </body>
