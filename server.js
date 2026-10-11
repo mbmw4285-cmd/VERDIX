@@ -6,7 +6,7 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 const MATERIALS = ['PLASTIC', 'PAPER', 'METAL', 'ORGANIC'];
 const API_KEY = process.env.GEMINI_API_KEY;
-const MODEL = process.env.GEMINI_MODEL || 'gemini-2.5-flash';
+const MODEL = process.env.GEMINI_MODEL || 'gemini-3.8-flash';
 const MAX_IMAGE_BYTES = 4 * 1024 * 1024;
 const ORIGINS = (process.env.FRONTEND_URL || '*').split(',').map(s => s.trim().replace(/\/+$/, ''));
 let irTriggerPending = false;
@@ -59,6 +59,30 @@ app.get('/api/ir-trigger', (_req, res) => {
   res.json({ detected });
 });
 
+// Calls Gemini and retries when Google reports temporary overload (503) or a network hiccup.
+async function callGemini(body) {
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(MODEL)}:generateContent`;
+  const MAX_ATTEMPTS = 4;
+  let response, data;
+  for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
+    try {
+      response = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'x-goog-api-key': API_KEY },
+        body,
+      });
+      data = await response.json().catch(() => ({}));
+      if (response.status !== 503) return { response, data };
+      console.warn(`Gemini 503 (attempt ${attempt}/${MAX_ATTEMPTS}), retrying...`);
+    } catch (error) {
+      if (attempt === MAX_ATTEMPTS) throw error;
+      console.warn(`Gemini network error (attempt ${attempt}/${MAX_ATTEMPTS}): ${error.message}`);
+    }
+    if (attempt < MAX_ATTEMPTS) await new Promise(r => setTimeout(r, 1500 * attempt));
+  }
+  return { response, data };
+}
+
 app.post('/api/classify', async (req, res) => {
   const image = req.body && req.body.image;
   const match = typeof image === 'string' && image.match(/^data:(image\/(?:jpeg|jpg|png|webp));base64,([A-Za-z0-9+/=]+)$/);
@@ -69,20 +93,17 @@ app.post('/api/classify', async (req, res) => {
   const mimeType = match[1] === 'image/jpg' ? 'image/jpeg' : match[1];
   const imageData = match[2];
   try {
-    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(MODEL)}:generateContent`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'x-goog-api-key': API_KEY },
-      body: JSON.stringify({
-        contents: [{ parts: [{ text: PROMPT }, { inline_data: { mime_type: mimeType, data: imageData } }] }],
-        generationConfig: { temperature: 0.1, maxOutputTokens: 300, responseMimeType: 'application/json' },
-      }),
-    });
-    const data = await response.json().catch(() => ({}));
+    const { response, data } = await callGemini(JSON.stringify({
+      contents: [{ parts: [{ text: PROMPT }, { inline_data: { mime_type: mimeType, data: imageData } }] }],
+      generationConfig: { temperature: 0.1, maxOutputTokens: 300, responseMimeType: 'application/json' },
+    }));
     if (!response.ok) {
       const detail = data.error && data.error.message ? data.error.message : `Gemini returned HTTP ${response.status}`;
       console.error('Gemini API error:', response.status, detail);
       if (response.status === 429) return res.status(429).json({ error: 'Gemini rate limit or quota reached. Wait a little and try again.' });
+      if (response.status === 404) return res.status(502).json({ error: 'Gemini model not found. Update the GEMINI_MODEL setting on the backend.' });
       if (response.status === 400 || response.status === 403 || response.status === 401) return res.status(502).json({ error: 'Gemini rejected the request. Check your API key, model name, and API quota in Google AI Studio.' });
+      if (response.status === 503) return res.status(503).json({ error: 'Gemini is busy right now. Please wait a few seconds and try again.' });
       return res.status(502).json({ error: 'Gemini service is temporarily unavailable. Please try again.' });
     }
     const raw = (data.candidates?.[0]?.content?.parts || []).map(p => p.text || '').join('').trim();
