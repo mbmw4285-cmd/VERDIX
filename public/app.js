@@ -14,7 +14,15 @@
       if (!response.ok) throw new Error('Backend status unavailable');
       const s = await response.json();
       $('statusDot').className = 'dot ' + (s.ai ? (s.esp32 === 'simulation' ? 'warn' : 'ok') : 'err');
-      $('statusText').textContent = !s.ai ? 'AI key missing on server' : (s.esp32 === 'simulation' ? 'AI online · Sorting simulation' : 'AI online · ESP32 configured');
+      $('statusText').textContent = !s.ai ? 'AI key missing on server' : (s.esp32 === 'simulation' ? 'AI online · Sorting simulation' : s.esp32 === 'connected' ? 'AI online · ESP32 connected' : 'AI online · ESP32 configured');
+      const levels = s.bins || {};
+      document.querySelectorAll('.bin').forEach(bin => {
+        const el = bin.querySelector('.bin-status'); const v = levels[bin.dataset.bin];
+        if (!el) return;
+        if (typeof v !== 'number') { el.textContent = 'READY TO RECEIVE'; el.style.color = ''; }
+        else if (v >= 90) { el.textContent = `BIN FULL · ${v}%`; el.style.color = 'var(--red)'; }
+        else { el.textContent = `${v}% FULL`; el.style.color = ''; }
+      });
     } catch {
       $('statusDot').className = 'dot err'; $('statusText').textContent = 'Backend unavailable';
     }
@@ -85,7 +93,7 @@
     $('confBar').style.width = `${r.confidence}%`;
     $('reason').textContent = r.reason || 'Please check the item before sorting.';
     $('destination').textContent = r.material === 'UNKNOWN' ? 'Manual review needed' : `${cap(r.material)} bin`;
-    $('resultSymbol').textContent = ({PLASTIC:'◇', PAPER:'▤', METAL:'▱', ORGANIC:'✿', UNKNOWN:'?'}[r.material] || '?');
+    $('resultSymbol').textContent = ({PLASTIC:'◇', METAL:'▱', ORGANIC:'✿', OTHER:'◈', UNKNOWN:'?'}[r.material] || '?');
     document.querySelectorAll('.bin').forEach(bin => bin.classList.toggle('active', bin.dataset.bin === r.material));
     sortBtn.disabled = r.material === 'UNKNOWN';
     sortBtn.innerHTML = r.material === 'UNKNOWN' ? 'Manual Review Required' : `Confirm &amp; Sort to ${cap(r.material)} <span>→</span>`;
@@ -153,7 +161,7 @@
   sortBtn.addEventListener('click', sort);
   document.addEventListener('visibilitychange', () => { if (document.hidden && stream) { /* keep the camera active while the page is open */ } });
   loadStatus();
-  setInterval(loadStatus, 30000);
+  setInterval(loadStatus, 10000);
   setInterval(checkIRTrigger, 1200);
   if (navigator.mediaDevices?.enumerateDevices) listCameras().catch(() => {});
 })();
