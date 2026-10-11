@@ -1,304 +1,60 @@
-
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>VERDIX | AI Waste Sorting</title>
-<style>
-:root {
-  --bg: #06110e;
-  --panel: #091a14;
-  --border: #174532;
-  --green: #20f59a;
-  --muted: #87a596;
-  --text: #e6f5ee;
-}
-* { box-sizing: border-box; }
-body {
-  margin: 0;
-  background: radial-gradient(ellipse at top right,#0b3023,transparent 45%),var(--bg);
-  color: var(--text);
-  font-family: Inter, Arial, sans-serif;
-}
-header {
-  max-width: 1450px;
-  margin: auto;
-  padding: 25px 28px;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 15px;
-}
-.brand { display: flex; align-items: center; gap: 12px; }
-.logo {
-  width: 48px; height: 48px; border-radius: 15px;
-  display: grid; place-items: center;
-  color: #052017; background: #5ce9b2;
-  font-size: 25px; font-weight: 900;
-}
-.brand h2 { margin: 0; letter-spacing: 2px; font-size: 22px; }
-.brand small { color: var(--muted); font-size: 11px; }
-.pill {
-  border: 1px solid var(--border); border-radius: 30px;
-  padding: 10px 14px; color: #5ce9b2; font-size: 12px;
-}
-main { max-width: 1450px; margin: auto; padding: 0 28px 40px; }
-.hero {
-  background: linear-gradient(110deg,#14372a,#102126);
-  border: 1px solid #1c3b32; border-radius: 24px;
-  padding: 32px; margin-bottom: 28px;
-  display: flex; align-items: center; justify-content: space-between;
-  gap: 20px;
-}
-.eyebrow {
-  color: #5ce9b2; font-weight: 800; letter-spacing: 2px;
-  font-size: 11px;
-}
-.hero h1 { font-size: clamp(28px,4vw,43px); line-height: 1.08; margin: 14px 0; }
-.hero p { color: #98b8aa; line-height: 1.7; margin-bottom: 0; }
-.recycle { font-size: 55px; padding: 10px 25px; }
-.workspace {
-  display: grid; grid-template-columns: 1.2fr 1fr; gap: 24px;
-}
-.panel {
-  min-width: 0; background: rgba(8,24,17,.94);
-  border: 1px solid var(--border); border-radius: 28px;
-  padding: 28px;
-}
-.panel h3 { margin: 0 0 20px; font-size: 17px; letter-spacing: 2px; }
-.video-wrap {
-  width: 100%; aspect-ratio: 4/3; background: #020806;
-  border-radius: 20px; overflow: hidden; position: relative;
-  border: 1px solid #173b2b;
-}
-video {
-  width: 100%; height: 100%; display: block;
-  object-fit: cover; transform: scaleX(1);
-}
-.camera-frame {
-  position: absolute; width: 50%; height: 48%;
-  border: 2px solid #20f59a; border-radius: 17px;
-  left: 25%; top: 26%; pointer-events: none;
-}
-select, button {
-  font: inherit; border-radius: 14px; padding: 14px 16px;
-}
-select {
-  width: 100%; margin-top: 16px; color: var(--text);
-  background: #071810; border: 1px solid var(--border);
-}
-.actions { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 16px; }
-button { cursor: pointer; border: 1px solid #1e9864; font-weight: 750; }
-.primary { background: var(--green); color: #042117; }
-.secondary { background: #122e22; color: var(--text); }
-button:disabled { opacity: .45; cursor: not-allowed; }
-.message { font-size: 13px; color: var(--muted); line-height: 1.6; }
-.result-category { font-size: 42px; font-weight: 850; margin: 54px 0 42px; }
-.metric { display: flex; justify-content: space-between; gap: 12px; margin: 22px 0; }
-.muted { color: var(--muted); }
-.progress { height: 10px; border-radius: 20px; background: #192a22; overflow: hidden; }
-.progress div { height: 100%; width: 0; background: var(--green); transition: width .3s; }
-.analysis { color: var(--muted); line-height: 1.7; min-height: 48px; margin-top: 18px; }
-.sort { width: 100%; margin-top: 30px; background: #176b43; color: #03190e; border: 0; }
-.status { color: var(--muted); font-size: 12px; margin-top: 15px; }
-footer { text-align: center; color: var(--muted); font-size: 12px; padding: 28px 0 10px; }
-@media(max-width:850px) {
-  header,main { padding-left: 16px; padding-right: 16px; }
-  .workspace { grid-template-columns: 1fr; }
-  .hero { padding: 25px; }
-  .recycle { font-size: 38px; padding: 0; }
-  .panel { padding: 20px; }
-}
-@media(max-width:480px) {
-  .pill { display: none; }
-  .hero { padding: 20px; }
-  .recycle { display: none; }
-  .actions { grid-template-columns: 1fr; }
-}
-</style>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#07120d">
+  <title>VERDIX | AI Waste Sorting</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
 </head>
 <body>
-<header>
-  <div class="brand">
-    <div class="logo">V</div>
-    <div><h2>VERDIX</h2><small>AI-BASED SMART WASTE SORTING</small></div>
-  </div>
-  <div class="pill">● PROTOTYPE DASHBOARD</div>
-</header>
-
-<main>
-  <section class="hero">
-    <div>
-      <div class="eyebrow">WASTE INTELLIGENCE SYSTEM</div>
-      <h1>Smarter sorting.<br>Cleaner tomorrow.</h1>
-      <p>Monitor waste categories, classification activity and bin capacity from one dashboard.</p>
-    </div>
-    <div class="recycle">♻️</div>
-  </section>
-
-  <section class="workspace">
-    <div class="panel">
-      <h3>Live Camera</h3>
-      <div class="video-wrap">
-        <video id="video" autoplay playsinline muted></video>
-        <div class="camera-frame"></div>
-      </div>
-      <select id="cameraSelect" aria-label="Choose webcam">
-        <option value="">Find cameras...</option>
-      </select>
-      <div class="actions">
-        <button class="secondary" id="startBtn">Start webcam</button>
-        <button class="primary" id="captureBtn" disabled>Capture &amp; classify</button>
-      </div>
-      <button class="secondary" id="stopBtn" style="width:100%;margin-top:10px">Stop camera</button>
-      <p id="cameraMessage" class="message">Connect your USB webcam, then select it from the list.</p>
-    </div>
-
-    <div class="panel">
-      <h3>AI Classification</h3>
-      <div class="result-category" id="category">—</div>
-      <div class="metric"><span class="muted">Detected item</span><b id="item">Waiting for scan</b></div>
-      <div class="metric"><span class="muted">Confidence</span><b id="confidence">0%</b></div>
-      <div class="progress"><div id="confidenceBar"></div></div>
-      <div class="analysis" id="analysis">Scan an object to see the AI's analysis.</div>
-      <button id="sortBtn" class="sort" disabled>Sort to Bin</button>
-      <p id="aiMessage" class="status">AI status: waiting for scan</p>
-    </div>
-  </section>
-  <footer>VERDIX • AI Waste Sorting Prototype • Verify classifications before physical sorting</footer>
-</main>
-
-<script>
-const video = document.getElementById("video");
-const cameraSelect = document.getElementById("cameraSelect");
-const startBtn = document.getElementById("startBtn");
-const captureBtn = document.getElementById("captureBtn");
-const stopBtn = document.getElementById("stopBtn");
-const cameraMessage = document.getElementById("cameraMessage");
-const aiMessage = document.getElementById("aiMessage");
-let stream = null;
-let lastCategory = null;
-let busy = false;
-
-async function findCameras() {
-  try {
-    // Browsers may hide camera labels until permission is granted.
-    const devices = await navigator.mediaDevices.enumerateDevices();
-    const cameras = devices.filter(d => d.kind === "videoinput");
-    const previous = cameraSelect.value;
-    cameraSelect.innerHTML = "";
-    if (!cameras.length) {
-      cameraSelect.add(new Option("No camera found", ""));
-      return;
-    }
-    cameras.forEach((camera, i) => {
-      cameraSelect.add(new Option(camera.label || `Camera ${i + 1}`, camera.deviceId));
-    });
-    if (cameras.some(c => c.deviceId === previous)) cameraSelect.value = previous;
-  } catch (e) {
-    cameraMessage.textContent = "Unable to list cameras. Check browser permissions.";
-  }
-}
-
-async function startCamera() {
-  if (!navigator.mediaDevices?.getUserMedia) {
-    cameraMessage.textContent = "Camera access requires HTTPS and a supported browser.";
-    return;
-  }
-  stopCamera();
-  try {
-    const selectedId = cameraSelect.value;
-    const videoConstraints = selectedId
-      ? { deviceId: { exact: selectedId }, width: { ideal: 1280 }, height: { ideal: 720 } }
-      : { facingMode: "user", width: { ideal: 1280 }, height: { ideal: 720 } };
-    stream = await navigator.mediaDevices.getUserMedia({ video: videoConstraints, audio: false });
-    video.srcObject = stream;
-    await video.play();
-    captureBtn.disabled = false;
-    cameraMessage.textContent = "Camera connected. Place one waste item in view.";
-    await findCameras();
-    if (selectedId) cameraSelect.value = selectedId;
-  } catch (e) {
-    cameraMessage.textContent = "Could not open camera: " + e.message +
-      ". Allow camera permission and close other apps using it.";
-  }
-}
-
-function stopCamera() {
-  if (stream) stream.getTracks().forEach(track => track.stop());
-  stream = null;
-  video.srcObject = null;
-  captureBtn.disabled = true;
-  cameraMessage.textContent = "Camera stopped.";
-}
-
-cameraSelect.addEventListener("change", () => {
-  if (stream) startCamera();
-});
-startBtn.addEventListener("click", startCamera);
-stopBtn.addEventListener("click", stopCamera);
-
-captureBtn.addEventListener("click", async () => {
-  if (!stream || busy || !video.videoWidth) return;
-  busy = true;
-  captureBtn.disabled = true;
-  aiMessage.textContent = "Sending image to Gemini AI...";
-  try {
-    const canvas = document.createElement("canvas");
-    canvas.width = video.videoWidth;
-    canvas.height = video.videoHeight;
-    canvas.getContext("2d").drawImage(video, 0, 0);
-    const dataUrl = canvas.toDataURL("image/jpeg", 0.85);
-    const imageBase64 = dataUrl.split(",")[1];
-
-    const response = await fetch("/api/classify-image", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ imageBase64, mimeType: "image/jpeg" })
-    });
-    const data = await response.json();
-    if (!response.ok) throw new Error(data.error || "Classification failed.");
-
-    const result = data.item || data.result || data;
-    const allowed = ["Plastic", "Metal", "Organic", "Other"];
-    const cat = allowed.find(c => c.toLowerCase() === String(result.category || "").toLowerCase());
-    if (!cat) throw new Error("AI returned an unknown category. Please scan again.");
-
-    lastCategory = cat;
-    document.getElementById("category").textContent = cat;
-    document.getElementById("item").textContent = result.item || result.itemName || cat;
-    const score = Math.max(0, Math.min(100, Number(result.confidence) || 0));
-    document.getElementById("confidence").textContent = score + "%";
-    document.getElementById("confidenceBar").style.width = score + "%";
-    document.getElementById("analysis").textContent =
-      result.reason || result.explanation || "Classified by Gemini AI. Check the item before sorting.";
-    document.getElementById("sortBtn").disabled = false;
-    aiMessage.textContent = "Classification complete.";
-  } catch (e) {
-    aiMessage.textContent = "AI error: " + e.message;
-  } finally {
-    busy = false;
-    captureBtn.disabled = !stream;
-  }
-});
-
-document.getElementById("sortBtn").addEventListener("click", () => {
-  if (!lastCategory) return;
-  // This is a UI suggestion only; no physical servo command is sent.
-  document.getElementById("analysis").textContent =
-    "Suggested destination: " + lastCategory + " bin. Physical sorting is not connected yet.";
-  aiMessage.textContent = "Suggested bin: " + lastCategory + ". No hardware command was sent.";
-});
-
-(async function init() {
-  if (!navigator.mediaDevices?.enumerateDevices) {
-    cameraMessage.textContent = "Open this site over HTTPS in Chrome or Edge to use your webcam.";
-    return;
-  }
-  await findCameras();
-  cameraMessage.textContent = "Select your USB webcam and click Start webcam. Camera permission may be needed.";
-})();
-</script>
+  <header class="topbar">
+    <a class="brand" href="#top" aria-label="VERDIX home"><span class="brand-mark">V</span><span><strong>VERDIX</strong><small>SMART WASTE INTELLIGENCE</small></span></a>
+    <div class="connection"><i id="statusDot" class="dot"></i><span id="statusText">Connecting to AI…</span></div>
+  </header>
+  <main id="top">
+    <section class="hero">
+      <div><p class="eyebrow">AI-POWERED SORTING SYSTEM</p><h1>Smarter sorting.<br><span>Cleaner tomorrow.</span></h1><p class="hero-copy">Identify waste in real time and direct each item to the right recycling stream.</p>
+        <div class="steps"><span>01 &nbsp; CAMERA</span><b>→</b><span>02 &nbsp; AI VISION</span><b>→</b><span>03 &nbsp; SORT</span></div>
+      </div><div class="hero-icon" aria-hidden="true">♻</div>
+    </section>
+    <section class="workspace" aria-label="Waste classification workspace">
+      <article class="panel camera-panel">
+        <div class="panel-heading"><div><p class="eyebrow">INPUT</p><h2>Live Camera</h2></div><span class="live-tag"><i></i> CAMERA FEED</span></div>
+        <div class="camera-view"><video id="video" autoplay playsinline muted></video><div id="camEmpty" class="camera-empty"><span class="camera-icon">▣</span><strong>Your camera preview</strong><p>Choose a camera and start the feed</p></div><div class="reticle" aria-hidden="true"><span></span><span></span><span></span><span></span></div><div id="scanLine" class="scan-line"></div><span class="view-label">VERDIX / LIVE INPUT</span></div>
+        <label class="field-label" for="cameraSelect">CAMERA SOURCE</label><select id="cameraSelect"><option value="">Detecting cameras…</option></select>
+        <div class="button-row"><button id="startBtn" class="btn btn-outline">Start Camera</button><button id="scanBtn" class="btn btn-primary" disabled>Capture &amp; Classify <span>↗</span></button></div>
+        <div class="auto-controls">
+          <label class="auto-toggle"><input type="checkbox" id="autoMode"><span class="toggle-ui"></span><span><strong>IR Automatic Scan</strong><small>Scan when the ESP32 reports an IR trigger</small></span></label>
+          <span id="irStatus" class="ir-status">AUTO MODE OFF</span>
+        </div>
+        <p class="hint" id="cameraHint">Connect your USB webcam, allow camera access, then select it above.</p>
+      </article>
+      <article class="panel result-panel" id="resultCard" data-material="none">
+        <div class="panel-heading"><div><p class="eyebrow">ANALYSIS</p><h2>AI Classification</h2></div><span class="ai-chip">✦ GEMINI AI</span></div>
+        <div class="result-main"><div class="result-symbol" id="resultSymbol">✳</div><div><p class="field-label">DETECTED MATERIAL</p><div id="material" class="material">Awaiting scan</div></div></div>
+        <div class="divider"></div>
+        <div class="result-meta"><div><span class="field-label">IDENTIFIED ITEM</span><strong id="item">No item detected yet</strong></div><div class="confidence"><span class="field-label">CONFIDENCE</span><strong id="confText">—%</strong></div></div>
+        <div class="confidence-track"><i id="confBar"></i></div>
+        <div class="reason-box"><span class="reason-icon">✦</span><p id="reason">Capture a clear image of one waste item to see the AI analysis here.</p></div>
+        <div class="destination"><div><span class="field-label">SUGGESTED DESTINATION</span><strong id="destination">Waiting for classification</strong></div><span class="destination-icon">↘</span></div>
+        <button id="sortBtn" class="btn btn-primary btn-sort" disabled>Confirm &amp; Sort <span>→</span></button>
+        <p id="msg" class="message" role="status" aria-live="polite">System ready when camera is connected.</p>
+      </article>
+    </section>
+    <section class="bin-section"><div class="section-heading"><div><p class="eyebrow">SORTING DESTINATIONS</p><h2>Waste categories</h2></div><p>Four material streams</p></div><div class="bins">
+      <article class="bin" data-bin="PLASTIC"><span class="bin-number">01 / MATERIAL</span><div class="bin-emoji">◇</div><h3>Plastic</h3><p>Bottles · Packaging · Containers</p><span class="bin-status">READY TO RECEIVE</span></article>
+      <article class="bin" data-bin="PAPER"><span class="bin-number">02 / MATERIAL</span><div class="bin-emoji">▤</div><h3>Paper</h3><p>Paper · Cardboard · Cartons</p><span class="bin-status">READY TO RECEIVE</span></article>
+      <article class="bin" data-bin="METAL"><span class="bin-number">03 / MATERIAL</span><div class="bin-emoji">▱</div><h3>Metal</h3><p>Cans · Foil · Metal scraps</p><span class="bin-status">READY TO RECEIVE</span></article>
+      <article class="bin" data-bin="ORGANIC"><span class="bin-number">04 / MATERIAL</span><div class="bin-emoji">✿</div><h3>Organic</h3><p>Food scraps · Biodegradable waste</p><span class="bin-status">READY TO RECEIVE</span></article>
+    </div></section>
+    <section class="notice"><span>ⓘ</span><p><strong>Prototype mode:</strong> AI predictions can be wrong. Check the detected category before confirming. Unless an ESP32 is configured and reachable, sorting is simulated and will not move physical servos.</p></section>
+  </main>
+  <footer><span>VERDIX</span> · AI-Based Smart Waste Sorting and Management System <span class="footer-right">BUILT FOR A CLEANER FUTURE</span></footer>
+  <canvas id="canvas" hidden></canvas>
+  <script src="config.js"></script><script src="app.js"></script>
 </body>
 </html>

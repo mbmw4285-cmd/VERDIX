@@ -1,25 +1,35 @@
-# VERDIX Starter Dashboard
+# VERDIX — GitHub-ready update
 
-Starter website for VERDIX – AI-Based Smart Waste Sorting and Management System.
+This package includes **both manual and IR-triggered scanning**. The manual **Capture & Classify** button remains available. When **IR Automatic Scan** is enabled in the dashboard, it polls the backend for an event sent by the ESP32 IR sensor and captures/classifies the webcam image. The user still confirms the category with **Confirm & Sort** before a physical sort request is sent.
 
-## Included
-- Responsive dashboard for Plastic, Metal, Organic and Other
-- Express API health and status endpoints
-- Demo classification buttons and recent activity
-- Endpoints for future classification and bin-fill readings
+## Files
+- `public/index.html`, `public/style.css`, `public/app.js`: dashboard and camera workflow.
+- `public/config.js`: backend URL used by the hosted frontend.
+- `server.js`: Gemini classification, sort endpoint, and IR event endpoints.
+- `esp32_ir_trigger_example.ino`: sample ESP32 sketch to send IR events to the backend.
 
-## Not connected yet
-This is a starter demo, not the complete hardware/AI system. Gemini, webcam, ESP32, servos, ultrasonic sensors and database are not connected. Data is held in memory and resets when the server restarts. Demo buttons do not move hardware.
+## GitHub upload
+Copy the contents of this folder into your existing `VERDIX` repository folder, keeping the `public` folder structure. Commit and push to `main`.
 
-## Deploy
-Build command: `npm install`
-Start command: `npm start`
+## Backend environment variables
+- `GEMINI_API_KEY`: required; set only in Render/backend environment settings, never in GitHub.
+- `GEMINI_MODEL`: optional, defaults to `gemini-2.5-flash`.
+- `ESP32_URL`: optional base URL for your ESP32 sorting controller. It must accept `POST /sort` with `{ "material": "PLASTIC" }` etc.
+- `IR_TRIGGER_TOKEN`: recommended shared secret for IR event requests. Use a long random value.
+- `FRONTEND_URL`: optional Netlify origin, if restricting CORS.
 
-## API endpoints
-- `GET /api/health`
-- `GET /api/status`
-- `POST /api/classification` with JSON `{"category":"Plastic","confidence":95}`
-- `POST /api/bins` with JSON `{"bin":"Plastic","fill":40}`
+## Configure the ESP32 IR trigger
+1. Open `esp32_ir_trigger_example.ino` in Arduino IDE.
+2. Enter your Wi-Fi name/password, backend URL, and shared token.
+3. In Render, set `IR_TRIGGER_TOKEN` to exactly the same value as the sketch, then redeploy the backend.
+4. Check your actual sensor wiring and active state. Example uses IR OUT on GPIO 13 and active-LOW output; change these if needed.
+5. Upload the sketch to your ESP32 DevKit.
+6. Open the dashboard over HTTPS, allow webcam access, start the camera, and enable **IR Automatic Scan**.
+7. Place one item in front of the IR sensor. The dashboard should capture and classify it. Confirm the result before pressing **Confirm & Sort**.
 
-## Secret safety
-Never put a real Gemini API key in `public/index.html` or commit it to GitHub. Use your host's environment settings, or a local `.env` file excluded by `.gitignore`.
+## Important behavior
+- Manual scanning works without the IR sensor.
+- Automatic scanning requires the ESP32 sketch to send `/api/ir-trigger` events to the same backend the dashboard uses.
+- The camera is the computer/USB webcam in this version; it is not streaming video directly from ESP32-CAM.
+- AI classification needs `GEMINI_API_KEY`. Physical servo control needs a reachable, correctly implemented ESP32 sorting endpoint. Without that, the sort endpoint returns simulation mode.
+- Test with the servo power disconnected first, and verify the category before allowing physical movement.
