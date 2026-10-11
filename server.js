@@ -4,7 +4,7 @@ const path = require('path');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
-const MATERIALS = ['PLASTIC', 'PAPER', 'METAL', 'ORGANIC'];
+const MATERIALS = ['PLASTIC', 'METAL', 'ORGANIC', 'OTHER'];
 const API_KEY = process.env.GEMINI_API_KEY;
 const MODEL = process.env.GEMINI_MODEL || 'gemini-3.8-flash';
 const MAX_IMAGE_BYTES = 4 * 1024 * 1024;
@@ -12,6 +12,18 @@ const ORIGINS = (process.env.FRONTEND_URL || '*').split(',').map(s => s.trim().r
 let irTriggerPending = false;
 let lastIrTriggerAt = 0;
 const IR_DEBOUNCE_MS = 1500;
+// Sort commands waiting for the ESP32 to pick up (ESP32 polls /api/sort-command).
+let pendingSort = null;
+let lastEspPollAt = 0;
+const ESP_ONLINE_MS = 15000;
+const SORT_EXPIRE_MS = 30000;
+const espOnline = () => Date.now() - lastEspPollAt < ESP_ONLINE_MS;
+// Bin fill levels (0-100, percent full) reported by the ESP32 ultrasonic sensors.
+let binLevels = {};
+let binLevelsAt = 0;
+const LEVELS_FRESH_MS = 60000;
+const BIN_FULL_PERCENT = Number(process.env.BIN_FULL_PERCENT) || 90;
+const freshLevels = () => (Date.now() - binLevelsAt < LEVELS_FRESH_MS ? binLevels : {});
 
 app.use((req, res, next) => {
   const origin = req.headers.origin;
@@ -28,14 +40,15 @@ app.use((req, res, next) => {
 app.use(express.json({ limit: '6mb' }));
 app.use(express.static(path.join(__dirname, 'public')));
 
-const PROMPT = `You are the vision classifier for a waste-sorting prototype. Inspect the image and classify the main visible waste item into exactly one category: PLASTIC, PAPER, METAL, or ORGANIC. ORGANIC means food scraps or other clearly biodegradable organic waste. If the image is empty, blurry, has multiple ambiguous items, or cannot be classified reliably, return UNKNOWN. Do not claim laboratory-level certainty. Reply with only valid JSON in this exact shape: {"material":"PLASTIC|PAPER|METAL|ORGANIC|UNKNOWN","confidence":0,"item":"short item name","reason":"one short sentence"}. Confidence is an estimate from 0 to 100.`;
+const PROMPT = `You are the vision classifier for a waste-sorting prototype. Inspect the image and classify the main visible waste item into exactly one category: PLASTIC, METAL, ORGANIC, or OTHER. PLASTIC means plastic bottles, packaging and containers. METAL means cans, foil and metal scraps. ORGANIC means food scraps or other clearly biodegradable organic waste. OTHER means glass, paper, cardboard, cartons, or any other item that is not plastic, metal or organic. If the image is empty, blurry, has multiple ambiguous items, or cannot be classified reliably, return UNKNOWN. Do not claim laboratory-level certainty. Reply with only valid JSON in this exact shape: {"material":"PLASTIC|METAL|ORGANIC|OTHER|UNKNOWN","confidence":0,"item":"short item name","reason":"one short sentence"}. Confidence is an estimate from 0 to 100.`;
 
 app.get('/health', (_req, res) => res.json({ ok: true, project: 'VERDIX' }));
 app.get('/api/status', (_req, res) => res.json({
   ai: Boolean(API_KEY),
   model: MODEL,
-  esp32: process.env.ESP32_URL ? 'configured' : 'simulation',
+  esp32: process.env.ESP32_URL ? 'configured' : (espOnline() ? 'connected' : 'simulation'),
   irTrigger: true,
+  bins: freshLevels(),
 }));
 
 // The ESP32 posts here when its IR sensor detects a new object.
@@ -57,6 +70,37 @@ app.get('/api/ir-trigger', (_req, res) => {
   irTriggerPending = false;
   res.setHeader('Cache-Control', 'no-store');
   res.json({ detected });
+});
+
+// The ESP32 polls this endpoint to receive the confirmed sort command.
+app.get('/api/sort-command', (req, res) => {
+  const expected = String(process.env.IR_TRIGGER_TOKEN || '').trim();
+  const supplied = String(req.get('x-ir-token') || '').trim();
+  if (expected && supplied !== expected) return res.status(401).json({ error: 'Invalid token.' });
+  lastEspPollAt = Date.now();
+  res.setHeader('Cache-Control', 'no-store');
+  if (pendingSort && Date.now() - pendingSort.at <= SORT_EXPIRE_MS) {
+    const material = pendingSort.material;
+    pendingSort = null;
+    return res.json({ material });
+  }
+  pendingSort = null;
+  res.json({ material: null });
+});
+
+// The ESP32 posts bin fill levels here (percent full per bin; null if a sensor failed).
+app.post('/api/bin-levels', (req, res) => {
+  const expected = String(process.env.IR_TRIGGER_TOKEN || '').trim();
+  const supplied = String(req.get('x-ir-token') || '').trim();
+  if (expected && supplied !== expected) return res.status(401).json({ error: 'Invalid token.' });
+  const levels = {};
+  for (const m of MATERIALS) {
+    const v = req.body ? req.body[m] : null;
+    if (typeof v === 'number' && isFinite(v) && v >= 0) levels[m] = Math.min(100, Math.round(v));
+  }
+  binLevels = levels;
+  binLevelsAt = Date.now();
+  res.json({ ok: true });
 });
 
 // Calls Gemini and retries when Google reports temporary overload (503) or a network hiccup.
@@ -128,8 +172,18 @@ app.post('/api/classify', async (req, res) => {
 app.post('/api/sort', async (req, res) => {
   const material = String(req.body?.material || '').toUpperCase();
   if (!MATERIALS.includes(material)) return res.status(400).json({ error: 'Unknown waste category.' });
+  const level = freshLevels()[material];
+  if (typeof level === 'number' && level >= BIN_FULL_PERCENT) {
+    return res.status(409).json({ error: `${material[0] + material.slice(1).toLowerCase()} bin is ${level}% full. Empty it before sorting more.` });
+  }
   const base = String(process.env.ESP32_URL || '').trim().replace(/\/+$/, '');
-  if (!base) return res.json({ ok: true, simulated: true, material, message: `${material} bin selected. ESP32 is in simulation mode; no physical servo was activated.` });
+  if (!base) {
+    if (espOnline()) {
+      pendingSort = { material, at: Date.now() };
+      return res.json({ ok: true, simulated: false, material, message: `${material} command sent. The ESP32 will move the servo within a second.` });
+    }
+    return res.json({ ok: true, simulated: true, material, message: `${material} bin selected. ESP32 is not connected; no physical servo was activated.` });
+  }
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), 5000);
   try {
