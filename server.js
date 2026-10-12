@@ -5,8 +5,16 @@ const path = require('path');
 const app = express();
 const PORT = process.env.PORT || 3000;
 const MATERIALS = ['PLASTIC', 'METAL', 'ORGANIC', 'OTHER'];
-const API_KEY = process.env.GEMINI_API_KEY;
-const MODEL = process.env.GEMINI_MODEL || 'gemini-3.8-flash';
+// AI provider: Groq if GROQ_API_KEY is set (or AI_PROVIDER=groq), otherwise Gemini.
+const GROQ_KEY = process.env.GROQ_API_KEY;
+const GEMINI_KEY = process.env.GEMINI_API_KEY;
+const PROVIDER = String(process.env.AI_PROVIDER || (GROQ_KEY ? 'groq' : 'gemini')).toLowerCase() === 'groq' ? 'groq' : 'gemini';
+const API_KEY = PROVIDER === 'groq' ? GROQ_KEY : GEMINI_KEY;
+const KEY_NAME = PROVIDER === 'groq' ? 'GROQ_API_KEY' : 'GEMINI_API_KEY';
+const LABEL = PROVIDER === 'groq' ? 'Groq' : 'Gemini';
+const MODEL = PROVIDER === 'groq'
+  ? (process.env.GROQ_MODEL || 'qwen/qwen3.8-27b')
+  : (process.env.GEMINI_MODEL || 'gemini-3.8-flash');
 const MAX_IMAGE_BYTES = 4 * 1024 * 1024;
 const ORIGINS = (process.env.FRONTEND_URL || '*').split(',').map(s => s.trim().replace(/\/+$/, ''));
 let irTriggerPending = false;
@@ -45,6 +53,7 @@ const PROMPT = `You are the vision classifier for a waste-sorting prototype. Ins
 app.get('/health', (_req, res) => res.json({ ok: true, project: 'VERDIX' }));
 app.get('/api/status', (_req, res) => res.json({
   ai: Boolean(API_KEY),
+  provider: PROVIDER,
   model: MODEL,
   esp32: process.env.ESP32_URL ? 'configured' : (espOnline() ? 'connected' : 'simulation'),
   irTrigger: true,
@@ -103,28 +112,67 @@ app.post('/api/bin-levels', (req, res) => {
   res.json({ ok: true });
 });
 
-// Calls Gemini and retries when Google reports temporary overload (503) or a network hiccup.
-async function callGemini(body) {
-  const url = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(MODEL)}:generateContent`;
+// Retries a provider request on temporary overload (503) or a network hiccup.
+async function withRetry(doRequest) {
   const MAX_ATTEMPTS = 4;
-  let response, data;
+  let result;
   for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
     try {
-      response = await fetch(url, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'x-goog-api-key': API_KEY },
-        body,
-      });
-      data = await response.json().catch(() => ({}));
-      if (response.status !== 503) return { response, data };
-      console.warn(`Gemini 503 (attempt ${attempt}/${MAX_ATTEMPTS}), retrying...`);
+      result = await doRequest();
+      if (result.status !== 503) return result;
+      console.warn(`${LABEL} 503 (attempt ${attempt}/${MAX_ATTEMPTS}), retrying...`);
     } catch (error) {
       if (attempt === MAX_ATTEMPTS) throw error;
-      console.warn(`Gemini network error (attempt ${attempt}/${MAX_ATTEMPTS}): ${error.message}`);
+      console.warn(`${LABEL} network error (attempt ${attempt}/${MAX_ATTEMPTS}): ${error.message}`);
     }
     if (attempt < MAX_ATTEMPTS) await new Promise(r => setTimeout(r, 1500 * attempt));
   }
-  return { response, data };
+  return result;
+}
+
+async function askGemini(mimeType, imageData) {
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(MODEL)}:generateContent`;
+  const response = await fetch(url, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'x-goog-api-key': API_KEY },
+    body: JSON.stringify({
+      contents: [{ parts: [{ text: PROMPT }, { inline_data: { mime_type: mimeType, data: imageData } }] }],
+      generationConfig: { temperature: 0.1, maxOutputTokens: 300, responseMimeType: 'application/json' },
+    }),
+  });
+  const data = await response.json().catch(() => ({}));
+  const raw = (data.candidates?.[0]?.content?.parts || []).map(p => p.text || '').join('').trim();
+  return { status: response.status, ok: response.ok, raw, detail: data.error && data.error.message };
+}
+
+async function askGroq(mimeType, imageData) {
+  const send = async (withReasoning) => {
+    const body = {
+      model: MODEL,
+      messages: [{ role: 'user', content: [
+        { type: 'text', text: PROMPT },
+        { type: 'image_url', image_url: { url: `data:${mimeType};base64,${imageData}` } },
+      ] }],
+      temperature: 0.2,
+      max_completion_tokens: 500,
+      response_format: { type: 'json_object' },
+    };
+    if (withReasoning) body.reasoning_effort = 'none';   // instruct mode: fast answer, no long thinking
+    const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${API_KEY}` },
+      body: JSON.stringify(body),
+    });
+    const data = await response.json().catch(() => ({}));
+    const raw = String(data.choices?.[0]?.message?.content || '').trim();
+    return { status: response.status, ok: response.ok, raw, detail: data.error && data.error.message };
+  };
+  let result = await send(true);
+  if (result.status === 400) {   // some models reject reasoning_effort; try once without it
+    console.warn('Groq 400 with reasoning_effort, retrying without it:', result.detail);
+    result = await send(false);
+  }
+  return result;
 }
 
 app.post('/api/classify', async (req, res) => {
@@ -132,25 +180,22 @@ app.post('/api/classify', async (req, res) => {
   const match = typeof image === 'string' && image.match(/^data:(image\/(?:jpeg|jpg|png|webp));base64,([A-Za-z0-9+/=]+)$/);
   if (!match) return res.status(400).json({ error: 'Invalid image. Please capture a JPEG image from the camera and try again.' });
   if (Buffer.byteLength(image, 'utf8') > MAX_IMAGE_BYTES) return res.status(413).json({ error: 'Image is too large. Please move closer or try again (maximum 4 MB).' });
-  if (!API_KEY) return res.status(500).json({ error: 'GEMINI_API_KEY is missing from the backend environment settings.' });
+  if (!API_KEY) return res.status(500).json({ error: `${KEY_NAME} is missing from the backend environment settings.` });
 
   const mimeType = match[1] === 'image/jpg' ? 'image/jpeg' : match[1];
   const imageData = match[2];
   try {
-    const { response, data } = await callGemini(JSON.stringify({
-      contents: [{ parts: [{ text: PROMPT }, { inline_data: { mime_type: mimeType, data: imageData } }] }],
-      generationConfig: { temperature: 0.1, maxOutputTokens: 300, responseMimeType: 'application/json' },
-    }));
-    if (!response.ok) {
-      const detail = data.error && data.error.message ? data.error.message : `Gemini returned HTTP ${response.status}`;
-      console.error('Gemini API error:', response.status, detail);
-      if (response.status === 429) return res.status(429).json({ error: 'Gemini rate limit or quota reached. Wait a little and try again.' });
-      if (response.status === 404) return res.status(502).json({ error: 'Gemini model not found. Update the GEMINI_MODEL setting on the backend.' });
-      if (response.status === 400 || response.status === 403 || response.status === 401) return res.status(502).json({ error: 'Gemini rejected the request. Check your API key, model name, and API quota in Google AI Studio.' });
-      if (response.status === 503) return res.status(503).json({ error: 'Gemini is busy right now. Please wait a few seconds and try again.' });
-      return res.status(502).json({ error: 'Gemini service is temporarily unavailable. Please try again.' });
+    const result = await withRetry(() => (PROVIDER === 'groq' ? askGroq(mimeType, imageData) : askGemini(mimeType, imageData)));
+    if (!result.ok) {
+      const detail = result.detail || `${LABEL} returned HTTP ${result.status}`;
+      console.error(`${LABEL} API error:`, result.status, detail);
+      if (result.status === 429) return res.status(429).json({ error: `${LABEL} rate limit or quota reached. Wait a little and try again.` });
+      if (result.status === 404) return res.status(502).json({ error: `${LABEL} model not found. Check the model name setting on the backend.` });
+      if ([400, 401, 403].includes(result.status)) return res.status(502).json({ error: `${LABEL} rejected the request. Check your API key, model name, and quota.` });
+      if (result.status === 503) return res.status(503).json({ error: `${LABEL} is busy right now. Please wait a few seconds and try again.` });
+      return res.status(502).json({ error: `${LABEL} service is temporarily unavailable. Please try again.` });
     }
-    const raw = (data.candidates?.[0]?.content?.parts || []).map(p => p.text || '').join('').trim();
+    const raw = String(result.raw || '').replace(/<think>[\s\S]*?<\/think>/g, '').trim();
     let parsed;
     try { parsed = JSON.parse(raw); }
     catch { parsed = JSON.parse((raw.match(/\{[\s\S]*\}/) || ['{}'])[0]); }
@@ -165,7 +210,7 @@ app.post('/api/classify', async (req, res) => {
     });
   } catch (error) {
     console.error('Classification error:', error.message);
-    res.status(502).json({ error: 'Could not reach Gemini AI. Check the backend logs and try again.' });
+    res.status(502).json({ error: `Could not reach ${LABEL} AI. Check the backend logs and try again.` });
   }
 });
 
