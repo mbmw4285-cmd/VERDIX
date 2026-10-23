@@ -10,19 +10,15 @@
    Both servos: supply GND connected to ESP32 GND (common ground).
    Tip: put a 470-1000 uF capacitor across the servo supply to stop resets.
 
-   HC-SR04 ultrasonic sensors (VCC 5V, GND). ECHO outputs 5V, so use a voltage
-   divider (e.g. 1k + 2k) or level shifter before the ESP32 pin.
-        TRIG   ECHO
-   PLASTIC bin   32     33
-   METAL bin     18     19
-   ORGANIC bin   21     22
-   OTHER bin     23     27    (the bin your table called "Glass": glass, paper, mixed)
+   HC-SR04 ultrasonic sensor (ONE, mounted at a top corner of the bin, facing down)
+   VCC 5V, GND. ECHO outputs 5V, so use a voltage divider (1k + 2k) or level shifter.
+        TRIG -> GPIO 32     ECHO -> GPIO 33 (through the divider)
 
    WHAT IT DOES
    1) IR sensor sees an item -> tells the server -> dashboard captures + classifies.
    2) Every second it asks the server for a confirmed sort command.
    3) On a command: carousel turns to the bin, hopper flap opens, drops, closes.
-   4) Every 10 s it measures all four bins and sends % full to the dashboard.
+   4) Every 10 s it measures the bin level and sends % full to the dashboard.
 */
 #include <WiFi.h>
 #include <WiFiClientSecure.h>
@@ -30,9 +26,9 @@
 #include <ESP32Servo.h>
 
 // ---------- EDIT THESE ----------
-const char* WIFI_SSID = "Shreyas";
-const char* WIFI_PASSWORD = "123456789";
-const char* SERVER = "https://verdix-1.onrender.com";
+const char* WIFI_SSID = "YOUR_WIFI_NAME";
+const char* WIFI_PASSWORD = "YOUR_WIFI_PASSWORD";
+const char* SERVER = "https://hmmmm-05gi.onrender.com";
 const char* TOKEN = "SET_THE_SAME_TOKEN_IN_RENDER";   // must equal IR_TRIGGER_TOKEN on Render
 
 const int IR_PIN = 13;
@@ -50,8 +46,8 @@ const unsigned long CAROUSEL_MOVE_MS = 1500;        // time for the carousel to 
 const unsigned long FLAP_OPEN_MS = 1500;            // how long the flap stays open
 const unsigned long FLAP_CLOSE_MS = 700;
 
-const int TRIG_PIN[4] = {32, 18, 21, 23};
-const int ECHO_PIN[4] = {33, 19, 22, 27};
+const int TRIG_PIN = 32;
+const int ECHO_PIN = 33;
 const float BIN_EMPTY_CM = 30.0;   // CALIBRATE: sensor-to-bottom distance when bin is empty
 const float BIN_FULL_CM = 5.0;     // CALIBRATE: sensor-to-waste distance when bin counts as 100% full
 // --------------------------------
@@ -77,7 +73,7 @@ void connectWiFi() {
 void setup() {
   Serial.begin(115200);
   pinMode(IR_PIN, INPUT_PULLUP);
-  for (int i = 0; i < 4; i++) { pinMode(TRIG_PIN[i], OUTPUT); pinMode(ECHO_PIN[i], INPUT); digitalWrite(TRIG_PIN[i], LOW); }
+  pinMode(TRIG_PIN, OUTPUT); pinMode(ECHO_PIN, INPUT); digitalWrite(TRIG_PIN, LOW);
   carousel.setPeriodHertz(50); flap.setPeriodHertz(50);
   carousel.attach(CAROUSEL_PIN, 500, 2400);
   flap.attach(FLAP_PIN, 500, 2400);
@@ -150,7 +146,7 @@ void sortTo(int bin) {
   flap.write(FLAP_CLOSED);
   delay(FLAP_CLOSE_MS);
   Serial.println("Sort done.");
-  lastLevelAt = millis() - LEVEL_INTERVAL_MS + 3000;   // re-measure bins ~3 s after a drop
+  lastLevelAt = millis() - LEVEL_INTERVAL_MS + 3000;   // re-measure the bin ~3 s after a drop
 }
 
 // Returns distance in cm, or -1 if no echo.
@@ -164,10 +160,10 @@ float readDistanceCm(int trig, int echo) {
 }
 
 // Median of 3 readings converted to percent full; -1 if the sensor failed.
-int readLevelPercent(int i) {
+int readLevelPercent() {
   float v[3]; int n = 0;
   for (int k = 0; k < 3; k++) {
-    float d = readDistanceCm(TRIG_PIN[i], ECHO_PIN[i]);
+    float d = readDistanceCm(TRIG_PIN, ECHO_PIN);
     if (d > 0) v[n++] = d;
     delay(30);
   }
@@ -182,19 +178,15 @@ int readLevelPercent(int i) {
 
 void sendBinLevels() {
   if (WiFi.status() != WL_CONNECTED) return;
-  String json = "{";
-  for (int i = 0; i < 4; i++) {
-    int lvl = readLevelPercent(i);
-    json += "\"" + String(BIN_NAMES[i]) + "\":" + (lvl < 0 ? String("null") : String(lvl));
-    if (i < 3) json += ",";
-  }
-  json += "}";
+  int lvl = readLevelPercent();
+  if (lvl < 0) { Serial.println("Bin-level sensor: no echo, skipping."); return; }
+  String json = "{\"level\":" + String(lvl) + "}";
   WiFiClientSecure client; client.setInsecure();
   HTTPClient http; http.setTimeout(8000);
   http.begin(client, String(SERVER) + "/api/bin-levels");
   http.addHeader("Content-Type", "application/json");
   http.addHeader("x-ir-token", TOKEN);
   int code = http.POST(json);
-  Serial.printf("Levels %s -> HTTP %d\n", json.c_str(), code);
+  Serial.printf("Level %s -> HTTP %d\n", json.c_str(), code);
   http.end();
 }
