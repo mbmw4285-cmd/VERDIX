@@ -26,8 +26,8 @@
 #include <ESP32Servo.h>
 
 // ---------- EDIT THESE ----------
-const char* WIFI_SSID = "YOUR_WIFI_NAME";
-const char* WIFI_PASSWORD = "YOUR_WIFI_PASSWORD";
+const char* WIFI_SSID = "Shreyas";
+const char* WIFI_PASSWORD = "123456789";
 const char* SERVER = "https://hmmmm-05gi.onrender.com";
 const char* TOKEN = "SET_THE_SAME_TOKEN_IN_RENDER";   // must equal IR_TRIGGER_TOKEN on Render
 
