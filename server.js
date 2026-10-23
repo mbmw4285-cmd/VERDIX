@@ -26,7 +26,7 @@ let lastEspPollAt = 0;
 const ESP_ONLINE_MS = 15000;
 const SORT_EXPIRE_MS = 30000;
 const espOnline = () => Date.now() - lastEspPollAt < ESP_ONLINE_MS;
-// Bin fill levels (0-100, percent full) reported by the ESP32 ultrasonic sensors.
+// Bin fill levels (0-100, percent full) reported by the ESP32 ultrasonic sensor.
 let binLevels = {};
 let binLevelsAt = 0;
 const LEVELS_FRESH_MS = 60000;
@@ -41,7 +41,7 @@ app.use((req, res, next) => {
     res.setHeader('Vary', 'Origin');
   }
   res.setHeader('Access-Control-Allow-Methods', 'GET,POST,OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, x-ir-token');
   if (req.method === 'OPTIONS') return res.sendStatus(204);
   next();
 });
@@ -97,15 +97,22 @@ app.get('/api/sort-command', (req, res) => {
   res.json({ material: null });
 });
 
-// The ESP32 posts bin fill levels here (percent full per bin; null if a sensor failed).
+// The ESP32 posts the bin fill level here.
+// Single sensor: { "level": 0-100 } is applied to the shared bin (all categories).
+// Per-category levels { "PLASTIC": 40, ... } are still accepted.
 app.post('/api/bin-levels', (req, res) => {
   const expected = String(process.env.IR_TRIGGER_TOKEN || '').trim();
   const supplied = String(req.get('x-ir-token') || '').trim();
   if (expected && supplied !== expected) return res.status(401).json({ error: 'Invalid token.' });
   const levels = {};
-  for (const m of MATERIALS) {
-    const v = req.body ? req.body[m] : null;
-    if (typeof v === 'number' && isFinite(v) && v >= 0) levels[m] = Math.min(100, Math.round(v));
+  const body = req.body || {};
+  if (typeof body.level === 'number' && isFinite(body.level) && body.level >= 0) {
+    for (const m of MATERIALS) levels[m] = Math.min(100, Math.round(body.level));
+  } else {
+    for (const m of MATERIALS) {
+      const v = body[m];
+      if (typeof v === 'number' && isFinite(v) && v >= 0) levels[m] = Math.min(100, Math.round(v));
+    }
   }
   binLevels = levels;
   binLevelsAt = Date.now();
