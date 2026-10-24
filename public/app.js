@@ -5,6 +5,9 @@
   const video = $('video'), canvas = $('canvas'), select = $('cameraSelect');
   const startBtn = $('startBtn'), scanBtn = $('scanBtn'), sortBtn = $('sortBtn'), autoMode = $('autoMode');
   let stream = null, current = null, busy = false, triggerBusy = false;
+  const MIN_AUTO_CONFIDENCE = 60;   // auto-sort only when the AI is at least this sure
+  const AUTO_COOLDOWN_MS = 7000;    // ignore new IR triggers while the ESP32 finishes sorting
+  let cooldownUntil = 0;
   const cap = s => s ? s[0] + s.slice(1).toLowerCase() : '';
   function say(text, kind = '') { const el = $('msg'); el.textContent = text; el.className = 'message ' + kind; }
 
@@ -65,6 +68,7 @@
       const active = stream.getVideoTracks()[0]?.getSettings()?.deviceId;
       if (active) select.value = active;
       say('Camera connected. Ready to scan.', 'ok');
+      if (!autoMode.checked) { autoMode.checked = true; autoMode.dispatchEvent(new Event('change')); }
     } catch (e) {
       stream = null;
       $('camEmpty').classList.remove('hide');
@@ -99,7 +103,7 @@
     sortBtn.innerHTML = r.material === 'UNKNOWN' ? 'Manual Review Required' : `Confirm &amp; Sort to ${cap(r.material)} <span>→</span>`;
   }
 
-  async function scan() {
+  async function scan(autoSort = false) {
     if (!stream || !video.videoWidth || busy) return say('Start the camera first.', 'err');
     busy = true; scanBtn.disabled = true; sortBtn.disabled = true; scanBtn.textContent = 'Analyzing…';
     $('scanLine').classList.add('on'); say('Sending the captured image to Gemini AI…');
@@ -113,7 +117,16 @@
       });
       const data = await response.json().catch(() => ({}));
       if (!response.ok) throw new Error(data.error || `Classification failed (${response.status})`);
-      showResult(data); say('Classification complete. Verify the result before confirming.', 'ok');
+      showResult(data);
+      if (autoSort) {
+        if (data.material !== 'UNKNOWN' && data.confidence >= MIN_AUTO_CONFIDENCE) {
+          say(`${cap(data.material)} detected (${data.confidence}%). Sorting automatically…`, 'ok');
+          await sort();
+          cooldownUntil = Date.now() + AUTO_COOLDOWN_MS;
+        } else {
+          say('Not sure enough to sort automatically. Check the result and confirm manually.', 'err');
+        }
+      } else say('Classification complete. Verify the result before confirming.', 'ok');
     } catch (e) { say(e.message || 'Could not classify this image.', 'err'); }
     finally { busy = false; scanBtn.disabled = !stream; scanBtn.textContent = 'Capture & Classify ↗'; $('scanLine').classList.remove('on'); }
   }
@@ -125,9 +138,9 @@
       const response = await fetch(API + '/api/ir-trigger', { cache: 'no-store' });
       if (!response.ok) return;
       const data = await response.json();
-      if (data.detected && autoMode.checked && stream && !busy) {
+      if (data.detected && autoMode.checked && stream && !busy && Date.now() >= cooldownUntil) {
         say('IR sensor detected an object. Capturing automatically…', 'ok');
-        await scan();
+        await scan(true);
       }
     } catch { /* keep manual scan available if the trigger service is offline */ }
     finally { triggerBusy = false; }
@@ -157,7 +170,7 @@
 
   startBtn.addEventListener('click', () => startCamera(select.value || undefined));
   select.addEventListener('change', () => { if (stream) startCamera(select.value || undefined); });
-  scanBtn.addEventListener('click', scan);
+  scanBtn.addEventListener('click', () => scan(false));
   sortBtn.addEventListener('click', sort);
   document.addEventListener('visibilitychange', () => { if (document.hidden && stream) { /* keep the camera active while the page is open */ } });
   loadStatus();
